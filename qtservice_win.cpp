@@ -589,8 +589,8 @@ void QtServiceSysPrivate::handleCustomEvent(QEvent *e)
         QtServiceBase::instance()->resume();
         break;
     default:
-	if (code >= 128 && code <= 255)
-	    QtServiceBase::instance()->processCommand(code - 128);
+        if (code >= 128 && code <= 255)
+          QtServiceBase::instance()->processCommand(code - 128);
         break;
     }
 
