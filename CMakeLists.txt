@@ -1,58 +1,56 @@
 cmake_minimum_required(VERSION 2.8)
-PROJECT(qtservice)
+project(qtservice)
 
-OPTION(${PROJECT_NAME}_BUILD_SHARED "Build ${PROJECT_NAME} as shared libraries" true)
+option(${PROJECT_NAME}_BUILD_SHARED "Build ${PROJECT_NAME} as shared libraries" true)
 
-SET(${PROJECT_NAME}-qt-components QtCore)
+find_package(Qt5Core REQUIRED)
 
-ADD_DEFINITIONS(-DUNICODE)
+add_definitions(-DUNICODE)
 
-SET(QT_DONT_USE_QTGUI TRUE)
-IF(NOT WIN32)
-  SET(QT_USE_QTNETWORK TRUE)
-  SET(${PROJECT_NAME}-qt-components ${${PROJECT_NAME}-qt-components} QtNetwork)
-ENDIF()
+if(NOT WIN32)
+  find_package(Qt5Network REQUIRED)
+endif()
 
-IF(MSVC AND BUILD_SHARED_LIBS)
-  ADD_DEFINITIONS("/DQT_QTSERVICE_EXPORT=__declspec(dllexport)")
-ENDIF()
+if(MSVC AND BUILD_SHARED_LIBS)
+  add_definitions("/DQT_QTSERVICE_EXPORT=__declspec(dllexport)")
+endif()
 
-find_package(Qt4 COMPONENTS ${${PROJECT_NAME}-qt-components})
-include(${QT_USE_FILE})
+set(${PROJECT_NAME}-sources qtservice.cpp)
 
-# generate moc files
-set(CMAKE_AUTOMOC TRUE)
-
-SET(${PROJECT_NAME}-sources qtservice.cpp)
-
-IF (WIN32)
-  SET(${PROJECT_NAME}-sources ${${PROJECT_NAME}-sources} qtservice_win.cpp)
-ELSEIF(UNIX)
-  SET(${PROJECT_NAME}-sources ${${PROJECT_NAME}-sources} qtservice_unix.cpp qtunixsocket.cpp qtunixserversocket.cpp)
-ENDIF()
+if (WIN32)
+  set(${PROJECT_NAME}-sources ${${PROJECT_NAME}-sources} qtservice_win.cpp)
+elseif(UNIX)
+  set(${PROJECT_NAME}-sources ${${PROJECT_NAME}-sources} qtservice_unix.cpp qtunixsocket.cpp qtunixserversocket.cpp)
+endif()
 
 # for #include of generated moc files
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
     
 # for #include of moc headers from binary tree
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-ADD_LIBRARY(${PROJECT_NAME} ${${PROJECT_NAME}-sources} ${${PROJECT_NAME}-mocs})
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${QT_LIBRARIES})
+add_library(${PROJECT_NAME} ${${PROJECT_NAME}-sources} ${${PROJECT_NAME}-mocs})
+target_link_libraries(${PROJECT_NAME} Qt5::Core)
+if(NOT WIN32)
+  target_link_libraries(${PROJECT_NAME} Qt5::Network)
+endif()
 
-INSTALL(TARGETS ${PROJECT_NAME}
+
+include_directories(${Qt5Network_INCLUDE_DIRS})
+
+install(TARGETS ${PROJECT_NAME}
     EXPORT flow-LibraryDependencies
 		RUNTIME DESTINATION bin
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib
 		)
 
-CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/ProjectConfig.cmake.in
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ProjectConfig.cmake.in
 	${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake @ONLY )
-INSTALL(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
 	DESTINATION share/cmake/${PROJECT_NAME} COMPONENT Development )
 
-INSTALL(EXPORT flow-LibraryDependencies DESTINATION share/cmake/${PROJECT_NAME} COMPONENT Development)
+install(EXPORT flow-LibraryDependencies DESTINATION share/cmake/${PROJECT_NAME} COMPONENT Development)
 
 set(QTSERVICE_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR}
